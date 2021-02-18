@@ -1,7 +1,37 @@
-// 注意：每次调用 $.get() 或 $.post() 或 $.ajax() 的时候，
-// 会先调用 ajaxPrefilter 这个函数
-// 在这个函数中，可以拿到我们给Ajax提供的配置对象
-$.ajaxPrefilter(function(options) {
-    // 在发起真正的 Ajax 请求之前，统一拼接请求的根路径
-    options.url = 'http://ajax.frontend.itheima.net' + options.url
-})
+axios.defaults.baseURL = 'http://api-breakingnews-web.itheima.net';
+
+// 添加请求拦截器
+axios.interceptors.request.use(function(config) {
+    // 在发送请求之前做些什么
+    // 在发送请求之前判断是否有 /my 开头的请求路径
+    // (1) startsWith
+    // (2) 正则
+    // (3) indexOf
+    // 如果有，手动添加请求头
+    var token = localStorage.getItem('token') || '';
+
+    if (config.url.startsWith('/my')) {
+        config.headers.Authorization = token
+    }
+
+    return config;
+
+}, function(error) {
+    // 对请求错误做些什么
+    return Promise.reject(error);
+});
+
+// 添加响应拦截器
+axios.interceptors.response.use(function(response) {
+    // 对响应数据做点什么
+    const { message, status } = response.data;
+    // 判断是否验证失败
+    if (message == '身份认证失败！' && status == 1) {
+        localStorage.removeItem('token')
+        location.href = './login.html'
+    }
+    return response.data;
+}, function(error) {
+    // 对响应错误做点什么
+    return Promise.reject(error);
+});
